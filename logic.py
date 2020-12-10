@@ -69,4 +69,6 @@ for index, colour in enumerate(colours):
 if(syn == 2): #강 + 녹지 시너지
   env_ret += 5
   
+if(env_ret > 80):
+  env_ret = 80
 print("쾌적도 : ", env_ret+conv_ret)
