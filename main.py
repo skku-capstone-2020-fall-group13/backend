@@ -1,42 +1,45 @@
-from flask import Flask, redirect, url_for, request
+from flask import Flask, redirect, url_for, request, jsonify
 from get_image import get_image
 
 app = Flask(__name__)
 
-def classify(image):
-    #result = call module
-    return result
 
 @app.route('/')
 def home():
-    return "fuck!"
+    return "hello world"
 
-@app.route('/score')
+@app.route('/score', methods = ['GET', 'POST'])
 def score():
-    img_x = request.args.get('x')
-    img_y = request.args.get('y')
-    image_content = get_image(img_x, img_y)
-    output = classify(image_content)
-    #result = score_module(output) / json file
-    return result
-
-@app.route('/image')
+    if request.method == 'GET':
+        img_x = request.args.get('x')
+        img_y = request.args.get('y')
+        image_content = get_image(img_x, img_y)
+        res_model = request.post('http://0.0.0.0:8080/model', model_input = image_content)
+        res_module = request.post('http://0.0.0.0:8080/module', module_input = res_model)
+        return res_module
+	
+@app.route('/image', methods = ['GET','POST'])
 def image():
-    img_x = request.args.get('x')
-    img_y = request.args.get('y')
-    image_content = get_image(img_x, img_y)
-    output = classify(image_content)
-    return redirect(url_for('show_img', segmented_image = output))
+	if request.method == 'GET':
+        img_x = request.args.get('x')
+        img_y = request.args.get('y')
+        image_content = get_image(img_x, img_y)
+        res = request.post('http://0.0.0.0:8080/model', model_input = image_content)
+	    return res
+    else :
+        return 'not using get method'
 
-@app.route('/image/PNG')
-def show_img(segmented_image):
-    
-    return 0
-@app.route('/categories')
+@app.route('/categories', methods = ['GET'])
 def categories():
-    return "suck!"
+    if request.method == 'GET':
+        img_x = request.args.get('x')
+        img_y = request.args.get('y')
+        image_content = get_image(img_x, img_y)
+        res_model = request.post('http://0.0.0.0:8080/model', model_input = image_content)
+        res_module = request.post('http://0.0.0.0:8080/categories', module_input = res_model)
+        return res_module
 
 if __name__ == "__main__" :
     app.run(host='0.0.0.0', port=8080, debug=True)
 
-#/
+
