@@ -54,7 +54,7 @@ def logic(image):
   for index, colour in enumerate(colours):
     count = counts[index]
     
-    proportion = (100 * count) / ((h-30) * (w-30)) #외곽 픽셀 0.7 반영
+    proportion = (100 * count) / (sum(counts)) #외곽 픽셀 0.7 반영
     ci = int(colour)
 
     obj.append({"Object" : Color_class[ci] , "Proportion" : proportion})
