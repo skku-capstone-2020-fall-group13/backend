@@ -1,16 +1,18 @@
-from flask import Flask, redirect, url_for, request, jsonify
+from flask import Flask, redirect, url_for, request, jsonify, make_response, send_file
 from get_image import get_image
-
-app = Flask(__name__)
 
 import os
 import torch
+import io
 
 import numpy as np
 from PIL import Image
 
 from unet import UnetPipeline
+from unet.util import cat_to_rgb
 from logic import logic
+
+app = Flask(__name__)
 
 device = torch.device('cuda')
 unet = UnetPipeline()
@@ -46,8 +48,13 @@ def image():
         file.close()
         input_img = np.array(Image.open('img.png').convert('RGB'))[:,:,:3]
         res = unet.predict(input_img, batch_size = 8)
-        res = res.tolist()
-        return jsonify(res)#return as 2d list
+        res = cat_to_rgb(res)
+        im = Image.fromarray(res.astype('uint8'))
+        file_object = io.BytesIO()
+        im.save(file_object,"PNG")
+        file_object.seek(0)
+
+        return send_file(file_object, mimetype='image/png')#jsonify(res)#return as 2d list
 
     else :
          return 'error'

@@ -11,7 +11,7 @@ def get_image(x, y):
     request="getmap"
     service="image"
     key = "38E7C820-0357-3E0B-83F2-731A5D06E6A6"
-    zoom="16"
+    zoom="18"
     size="1024,1024"
     crs="EPSG:4326"
     basemap="PHOTO"
