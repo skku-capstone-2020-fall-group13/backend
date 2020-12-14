@@ -1,76 +1,56 @@
-from flask import Flask, redirect, url_for, request, jsonify, make_response, send_file
-from get_image import get_image
+from flask import Flask, request, jsonify
 
-import os
+import sys
 import torch
-import io
-
+import json
 import numpy as np
-from PIL import Image
+import PIL.Image as Image
 
 from unet import UnetPipeline
 from unet.util import cat_to_rgb
-from logic import logic
+
+from comflogic import logic
+
+from vworld import VWorld
+from util import convert_base64
 
 app = Flask(__name__)
 
-device = torch.device('cuda')
+# load unet model
 unet = UnetPipeline()
-unet.load('./model_bri_0112_copy_2_wei_3/', device=device)
+unet.load('./model', device=torch.device('cuda'))
 
-@app.route('/')
-def home():
-    return "hello world"
+# load api key and initialize vworld api
+with open('./secrets.json') as secrets_file:
+    secrets = json.load(secrets_file)
+vworld = VWorld(secrets['vworldApiKey'])
 
-@app.route('/score', methods = ['GET', 'POST'])
-def score():
-    if request.method == 'GET':
-        img_x = request.args.get('x')
-        img_y = request.args.get('y')
-        image_content = get_image(img_x, img_y)
-        file=open("img.png","wb")
-        file.write(image_content)
-        file.close()
-        input_img = np.array(Image.open('img.png').convert('RGB'))[:,:,:3]
-        res = unet.predict(input_img, batch_size = 8)
-        score = logic(res)
-        print(score)
-        return jsonify(score)
-	
-@app.route('/image', methods = ['GET','POST'])
-def image():
-    if request.method == 'GET':
-        img_x = request.args.get('x')
-        img_y = request.args.get('y')
-        image_content = get_image(img_x, img_y)
-        file=open("img.png","wb")
-        file.write(image_content)
-        file.close()
-        input_img = np.array(Image.open('img.png').convert('RGB'))[:,:,:3]
-        res = unet.predict(input_img, batch_size = 8)
-        res = cat_to_rgb(res)
-        im = Image.fromarray(res.astype('uint8'))
-        file_object = io.BytesIO()
-        im.save(file_object,"PNG")
-        file_object.seek(0)
+@app.route('/analyze', methods = ['GET'])
+def analysis():
+    x = request.args.get('x')
+    y = request.args.get('y')
+    
+    # get original image from vworld
+    original_img = vworld.get_image(x, y)
+    original_arr = np.array(original_img.convert('RGB'))
+    
+    # get prediction from segmentation model
+    predict_arr = unet.predict(original_arr, batch_size = 8)
+    predict_img = Image.fromarray(cat_to_rgb(predict_arr).astype('uint8'))
 
-        return send_file(file_object, mimetype='image/png')#jsonify(res)#return as 2d list
+    # get scores from score module
+    scores = logic(predict_arr)
 
-    else :
-         return 'error'
+    # convert images to base64
+    original_img_base64 = convert_base64(original_img)
+    predict_img_base64 = convert_base64(predict_img)
 
-# @app.route('/categories', methods = ['GET', 'POST'])
-# def categories():
-#     if request.method == 'GET':
-#         img_x = request.args.get('x')
-#         img_y = request.args.get('y')
-#         image_content = get_image(img_x, img_y)
-#         image_content = image_content.encode('base64')
-#         res_model = request.post('http://0.0.0.0:8080/model', model_input = image_content)
-#         res_module = request.post('http://0.0.0.0:8080/categories', module_input = res_model)
-#         return res_module
+    return jsonify({
+        'original_image': original_img_base64,
+        'predict_image': predict_img_base64,
+        'scores': scores,
+    })
 
 if __name__ == "__main__" :
-    app.run(host='0.0.0.0', port=8080, debug=True)
-
-
+    
+    app.run(host='0.0.0.0', port=sys.argv[1], debug=True)
