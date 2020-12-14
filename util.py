@@ -5,4 +5,4 @@ import PIL.Image as Image
 def convert_base64(image: Image) -> str:
     image_buffer = io.BytesIO()
     image.save(image_buffer, format="png")
-    return f'data:image/png;base64,{base64.b64encode(image_buffer.getvalue())}'
+    return 'data:image/png;base64,' + base64.b64encode(image_buffer.getvalue()).decode('utf-8')
