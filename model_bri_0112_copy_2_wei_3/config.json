@@ -1,1 +1,0 @@
-{"smp_args": {"encoder_name": "efficientnet-b0", "classes": 9, "activation": "softmax"}, "crop_size": 128}
