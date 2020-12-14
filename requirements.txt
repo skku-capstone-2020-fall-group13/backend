@@ -1,0 +1,3 @@
+flask
+git+git://github.com/skku-capstone-2020-fall-group13/unet@master#egg=unet
+git+git://github.com/skku-capstone-2020-fall-group13/logic@main#egg=comflogic
