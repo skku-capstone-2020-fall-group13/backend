@@ -1,5 +1,7 @@
 import requests
 from collections import defaultdict
+import io
+from PIL import Image
 
 class VWorld:
     def __init__(self, apiKey) -> None:
@@ -7,8 +9,8 @@ class VWorld:
         self.apiKey = apiKey
         self.cache = defaultdict(str)
     
-    def get_image(self, coords):
-        coords_str = f'{coords.x},{coords.y}'
+    def get_image(self, x, y) -> Image:
+        coords_str = f'{x},{y}'
 
         response = self.cache[coords_str] \
             or requests.get(f'{self.baseURL}/image', {
@@ -22,4 +24,5 @@ class VWorld:
                 'center': coords_str,
             })
 
-        return response.content
+        image = Image.open(io.BytesIO(response.content))
+        return image
